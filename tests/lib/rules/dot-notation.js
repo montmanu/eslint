@@ -10,7 +10,7 @@
 //------------------------------------------------------------------------------
 
 const rule = require("../../../lib/rules/dot-notation"),
-    RuleTester = require("../../../lib/testers/rule-tester");
+    { RuleTester } = require("../../../lib/rule-tester");
 
 //------------------------------------------------------------------------------
 // Helpers
@@ -57,7 +57,8 @@ ruleTester.run("dot-notation", rule, {
         "a.null;",
         "a[undefined];",
         "a[void 0];",
-        "a[b()];"
+        "a[b()];",
+        { code: "a[/(?<zero>0)/];", parserOptions: { ecmaVersion: 2018 } }
     ],
     invalid: [
         {
@@ -81,6 +82,16 @@ ruleTester.run("dot-notation", rule, {
             code: "a[null];",
             output: "a.null;",
             errors: [{ messageId: "useDot", data: { key: "null" } }]
+        },
+        {
+            code: "a[true];",
+            output: "a.true;",
+            errors: [{ messageId: "useDot", data: { key: "true" } }]
+        },
+        {
+            code: "a[false];",
+            output: "a.false;",
+            errors: [{ messageId: "useDot", data: { key: "false" } }]
         },
         {
             code: "a['b'];",

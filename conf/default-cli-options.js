@@ -27,6 +27,6 @@ module.exports = {
     cacheStrategy: "stat",
     fix: false,
     allowInlineConfig: true,
-    reportUnusedDisableDirectives: false,
+    reportUnusedDisableDirectives: void 0,
     globInputPaths: true
 };

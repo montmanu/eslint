@@ -23,10 +23,10 @@ Please note that supporting JSX syntax is not the same as supporting React. Reac
 By the same token, supporting ES6 syntax is not the same as supporting new ES6 globals (e.g., new types such as
 `Set`).
 For ES6 syntax, use `{ "parserOptions": { "ecmaVersion": 6 } }`; for new ES6 global variables, use `{ "env":
-{ "es6": true } }`. `{ env: { es6: true } }` enables ES6 syntax automatically, but `{ parserOptions: { ecmaVersion: 6 } }` does not enable ES6 globals automatically.
+{ "es6": true } }`. `{ "env": { "es6": true } }` enables ES6 syntax automatically, but `{ "parserOptions": { "ecmaVersion": 6 } }` does not enable ES6 globals automatically.
 Parser options are set in your `.eslintrc.*` file by using the `parserOptions` property. The available options are:
 
-* `ecmaVersion` - set to 3, 5 (default), 6, 7, 8, 9, or 10 to specify the version of ECMAScript syntax you want to use. You can also set to 2015 (same as 6), 2016 (same as 7), 2017 (same as 8), 2018 (same as 9), or 2019 (same as 10) to use the year-based naming.
+* `ecmaVersion` - set to 3, 5 (default), 6, 7, 8, 9, 10 or 11 to specify the version of ECMAScript syntax you want to use. You can also set to 2015 (same as 6), 2016 (same as 7), 2017 (same as 8), 2018 (same as 9), 2019 (same as 10) or 2020 (same as 11) to use the year-based naming.
 * `sourceType` - set to `"script"` (default) or `"module"` if your code is in ECMAScript modules.
 * `ecmaFeatures` - an object indicating which additional language features you'd like to use:
     * `globalReturn` - allow `return` statements in the global scope
@@ -52,17 +52,12 @@ Here's an example `.eslintrc.json` file:
 
 Setting parser options helps ESLint determine what is a parsing error. All language options are `false` by default.
 
-### Deprecated
-
-* `ecmaFeatures.experimentalObjectRestSpread` - enable support for the experimental [object rest/spread properties](https://github.com/tc39/proposal-object-rest-spread). This syntax has been supported in `ecmaVersion: 2018`. This option will be removed in the future.
-
 ## Specifying Parser
 
 By default, ESLint uses [Espree](https://github.com/eslint/espree) as its parser. You can optionally specify that a different parser should be used in your configuration file so long as the parser meets the following requirements:
 
-1. It must be an npm module installed locally.
-1. It must have an Esprima-compatible interface (it must export a `parse()` method).
-1. It must produce Esprima-compatible AST and token objects.
+1. It must be a Node module loadable from the config file where it appears. Usually, this means you should install the parser package separately using npm.
+1. It must conform to the [parser interface](/docs/developer-guide/working-with-plugins.md#working-with-custom-parsers).
 
 Note that even with these compatibilities, there are no guarantees that an external parser will work correctly with ESLint and ESLint will not fix bugs related to incompatibilities with other parsers.
 
@@ -85,6 +80,55 @@ The following parsers are compatible with ESLint:
 
 Note when using a custom parser, the `parserOptions` configuration property is still required for ESLint to work properly with features not in ECMAScript 5 by default. Parsers are all passed `parserOptions` and may or may not use them to determine which features to enable.
 
+## Specifying Processor
+
+Plugins may provide processors. Processors can extract JavaScript code from another kind of files, then lets ESLint lint the JavaScript code. Or processors can convert JavaScript code in preprocessing for some purpose.
+
+To specify processors in a configuration file, use the `processor` key with the concatenated string of a plugin name and a processor name by a slash. For example, the following enables the processor `a-processor` that the plugin `a-plugin` provided:
+
+```json
+{
+    "plugins": ["a-plugin"],
+    "processor": "a-plugin/a-processor"
+}
+```
+
+To specify processors for a specific kind of files, use the combination of the `overrides` key and the `processor` key. For example, the following uses the processor `a-plugin/markdown` for `*.md` files.
+
+```json
+{
+    "plugins": ["a-plugin"],
+    "overrides": [
+        {
+            "files": ["*.md"],
+            "processor": "a-plugin/markdown"
+        }
+    ]
+}
+```
+
+Processors may make named code blocks such as `0.js` and `1.js`. ESLint handles such a named code block as a child file of the original file. You can specify additional configurations for named code blocks in the `overrides` section of the config. For example, the following disables `strict` rule for the named code blocks which end with `.js` in markdown files.
+
+```json
+{
+    "plugins": ["a-plugin"],
+    "overrides": [
+        {
+            "files": ["*.md"],
+            "processor": "a-plugin/markdown"
+        },
+        {
+            "files": ["**/*.md/*.js"],
+            "rules": {
+                "strict": "off"
+            }
+        }
+    ]
+}
+```
+
+ESLint checks the file extension of named code blocks then ignores those if [`--ext` CLI option](../user-guide/command-line-interface.md#--ext) didn't include the file extension. Be sure to specify the `--ext` option if you wanted to lint named code blocks other than `*.js`.
+
 ## Specifying Environments
 
 An environment defines global variables that are predefined. The available environments are:
@@ -94,6 +138,8 @@ An environment defines global variables that are predefined. The available envir
 * `commonjs` - CommonJS global variables and CommonJS scoping (use this for browser-only code that uses Browserify/WebPack).
 * `shared-node-browser` - Globals common to both Node.js and Browser.
 * `es6` - enable all ECMAScript 6 features except for modules (this automatically sets the `ecmaVersion` parser option to 6).
+* `es2017` - adds all ECMAScript 2017 globals and automatically sets the `ecmaVersion` parser option to 8.
+* `es2020` - adds all ECMAScript 2020 globals and automatically sets the `ecmaVersion` parser option to 11.
 * `worker` - web workers global variables.
 * `amd` - defines `require()` and `define()` as global variables as per the [amd](https://github.com/amdjs/amdjs-api/wiki/AMD) spec.
 * `mocha` - adds all of the Mocha testing global variables.
@@ -255,7 +301,7 @@ For historical reasons, the boolean value `false` and the string value `"readabl
 
 ## Configuring Plugins
 
-ESLint supports the use of third-party plugins. Before using the plugin you have to install it using npm.
+ESLint supports the use of third-party plugins. Before using the plugin, you have to install it using npm.
 
 To configure plugins inside of a configuration file, use the `plugins` key, which contains a list of plugin names. The `eslint-plugin-` prefix can be omitted from the plugin name.
 
@@ -277,7 +323,72 @@ And in YAML:
     - eslint-plugin-plugin2
 ```
 
-**Note:** Due to the behavior of Node's `require` function, a globally-installed instance of ESLint can only use globally-installed ESLint plugins, and locally-installed version can only use *locally-installed* plugins. Mixing local and global plugins is not supported.
+**Note:** Plugins are resolved relative to the current working directory of the ESLint process. In other words, ESLint will load the same plugin as a user would obtain by running `require('eslint-plugin-pluginname')` in a Node REPL from their project root.
+
+### Naming Convention
+
+#### Include a Plugin
+
+The `eslint-plugin-` prefix can be omitted for non-scoped packages
+
+```js
+{
+    // ...
+    "plugins": [
+        "jquery", // means eslint-plugin-jquery
+    ]
+    // ...
+}
+```
+
+The same rule does apply to scoped packages:
+
+```js
+{
+    // ...
+    "plugins": [
+        "@jquery/jquery", // means @jquery/eslint-plugin-jquery
+        "@foobar" // means @foobar/eslint-plugin
+    ]
+    // ...
+}
+```
+
+#### Use a Plugin
+
+When using rules, environments or configs defined by plugins, they must be referenced following the convention:
+
+* `eslint-plugin-foo` → `foo/a-rule`
+* `@foo/eslint-plugin` → `@foo/a-config`
+* `@foo/eslint-plugin-bar` → `@foo/bar/a-environment`
+
+For example:
+
+```js
+{
+    // ...
+    "plugins": [
+        "jquery",   // eslint-plugin-jquery
+        "@foo/foo", // @foo/eslint-plugin-foo
+        "@bar"      // @bar/eslint-plugin
+    ],
+    "extends": [
+        "plugin:@foo/foo/recommended",
+        "plugin:@bar/recommended"
+    ],
+    "rules": {
+        "jquery/a-rule": "error",
+        "@foo/foo/some-rule": "error",
+        "@bar/another-rule": "error"
+    },
+    "env": {
+        "jquery/jquery": true,
+        "@foo/foo/env-foo": true,
+        "@bar/env-bar": true,
+    }
+    // ...
+}
+```
 
 ## Configuring Rules
 
@@ -486,6 +597,34 @@ To disable rules inside of a configuration file for a group of files, use the `o
 }
 ```
 
+## Configuring Inline Comment Behaviors
+
+### Disabling Inline Comments
+
+To disable all inline config comments, use `noInlineConfig` setting. For example:
+
+```json
+{
+  "rules": {...},
+  "noInlineConfig": true
+}
+```
+
+This setting is similar to [--no-inline-config](./command-line-interface.md#--no-inline-config) CLI option.
+
+### Report Unused `eslint-disable` Comments
+
+To report unused `eslint-disable` comments, use `reportUnusedDisableDirectives` setting. For example:
+
+```json
+{
+  "rules": {...},
+  "reportUnusedDisableDirectives": true
+}
+```
+
+This setting is similar to [--report-unused-disable-directives](./command-line-interface.md#--report-unused-disable-directives) CLI option, but doesn't fail linting (reports as `"warn"` severity).
+
 ## Adding Shared Settings
 
 ESLint supports adding shared settings into configuration file. You can add `settings` object to ESLint configuration file and it will be supplied to every rule that will be executed. This may be useful if you are adding custom rules and want them to have access to the same information and be easily configurable.
@@ -617,7 +756,7 @@ The complete configuration hierarchy, from highest precedence to lowest preceden
 1. Project-level configuration:
     1. `.eslintrc.*` or `package.json` file in same directory as linted file
     1. Continue searching for `.eslintrc` and `package.json` files in ancestor directories (parent has highest precedence, then grandparent, etc.), up to and including the root directory or until a config with `"root": true` is found.
-1. In the absence of any configuration from (1) through (3), fall back to a personal default configuration in  `~/.eslintrc`.
+1. In the absence of any configuration from (1) through (3), fall back to a personal default configuration in `~/.eslintrc`.
 
 ## Extending Configuration Files
 
@@ -625,10 +764,10 @@ A configuration file can extend the set of enabled rules from base configuration
 
 The `extends` property value is either:
 
-* a string that specifies a configuration
+* a string that specifies a configuration (either a path to a config file, the name of a shareable config, `eslint:recommended`, or `eslint:all`)
 * an array of strings: each additional configuration extends the preceding configurations
 
-ESLint extends configurations recursively so a base configuration can also have an `extends` property.
+ESLint extends configurations recursively, so a base configuration can also have an `extends` property. Relative paths and shareable config names in an `extends` property are resolved from the location of the config file where they appear.
 
 The `rules` property can do any of the following to extend (or override) the set of rules:
 
@@ -723,9 +862,7 @@ Example of a configuration file in JSON format:
 
 ### Using a configuration file
 
-The `extends` property value can be an absolute or relative path to a base [configuration file](#using-configuration-files).
-
-ESLint resolves a relative path to a base configuration file relative to the configuration file that uses it **unless** that file is in your home directory or a directory that isn't an ancestor to the directory in which ESLint is installed (either locally or globally). In those cases, ESLint resolves the relative path to the base file relative to the linted **project** directory (typically the current working directory).
+The `extends` property value can be an absolute or relative path to a base [configuration file](#using-configuration-files). ESLint resolves a relative path to a base configuration file relative to the configuration file that uses it.
 
 Example of a configuration file in JSON format:
 
@@ -782,10 +919,11 @@ module.exports = {
 
 ### How it works
 
-* Glob pattern overrides can only be configured within config files (`.eslintrc.*` or `package.json`).
 * The patterns are applied against the file path relative to the directory of the config file. For example, if your config file has the path `/Users/john/workspace/any-project/.eslintrc.js` and the file you want to lint has the path `/Users/john/workspace/any-project/lib/util.js`, then the pattern provided in `.eslintrc.js` will be executed against the relative path `lib/util.js`.
 * Glob pattern overrides have higher precedence than the regular configuration in the same config file. Multiple overrides within the same config are applied in order. That is, the last override block in a config file always has the highest precedence.
-* A glob specific configuration works almost the same as any other ESLint config. Override blocks can contain any configuration options that are valid in a regular config, with the exception of `extends`, `overrides`, and `root`.
+* A glob specific configuration works almost the same as any other ESLint config. Override blocks can contain any configuration options that are valid in a regular config, with the exception of `root`.
+    * A glob specific configuration can have `extends` setting, but the `root` property in the extended configs is ignored.
+    * Nested `overrides` setting will be applied only if the glob patterns of both of the parent config and the child config matched. This is the same when the extended configs have `overrides` setting.
 * Multiple glob patterns can be provided within a single override block. A file must match at least one of the supplied patterns for the configuration to apply.
 * Override blocks can also specify patterns to exclude from matches. If a file matches any of the excluded patterns, the configuration won't apply.
 

@@ -10,7 +10,7 @@
 //------------------------------------------------------------------------------
 
 const rule = require("../../../lib/rules/no-multi-assign"),
-    RuleTester = require("../../../lib/testers/rule-tester");
+    { RuleTester } = require("../../../lib/rule-tester");
 
 //------------------------------------------------------------------------------
 // Fixtures
@@ -19,9 +19,9 @@ const rule = require("../../../lib/rules/no-multi-assign"),
 /**
  * Returns an error object at the specified line and column
  * @private
- * @param {int} line - line number
- * @param {int} column - column number
- * @param {string} type - Type of node
+ * @param {int} line line number
+ * @param {int} column column number
+ * @param {string} type Type of node
  * @returns {Oject} Error object
  */
 function errorAt(line, column, type) {
@@ -50,8 +50,8 @@ ruleTester.run("no-mutli-assign", rule, {
         "for(var a = 0, b = 0;;){}",
         { code: "for(let a = 0, b = 0;;){}", parserOptions: { ecmaVersion: 6 } },
         { code: "for(const a = 0, b = 0;;){}", parserOptions: { ecmaVersion: 6 } },
-        { code: "export let a, b;", parserOptions: { sourceType: "module" } },
-        { code: "export let a,\n b = 0;", parserOptions: { sourceType: "module" } }
+        { code: "export let a, b;", parserOptions: { ecmaVersion: 6, sourceType: "module" } },
+        { code: "export let a,\n b = 0;", parserOptions: { ecmaVersion: 6, sourceType: "module" } }
     ],
 
     invalid: [

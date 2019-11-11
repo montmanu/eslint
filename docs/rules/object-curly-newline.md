@@ -15,7 +15,7 @@ This rule has either a string option:
 
 Or an object option:
 
-* `"multiline": true` requires line breaks if there are line breaks inside properties or between properties
+* `"multiline": true` requires line breaks if there are line breaks inside properties or between properties. Otherwise, it disallows line breaks.
 * `"minProperties"` requires line breaks if the number of properties is at least the given integer. By default, an error will also be reported if an object contains linebreaks and has fewer properties than the given integer. However, the second behavior is disabled if the `consistent` option is set to `true`
 * `"consistent": true` (default) requires that either both curly braces, or neither, directly enclose newlines. Note that enabling this option will also change the behavior of the `minProperties` option. (See `minProperties` above for more information)
 
@@ -333,23 +333,19 @@ let c = {foo: 1, bar: 2
 };
 let d = {
     foo: 1, bar: 2};
-let e = {foo: 1,
-    bar: 2};
-let f = {foo: function() {
+let e = {foo: function() {
     dosomething();
 }};
 
-let {g
+let {f
 } = obj;
 let {
-    h} = obj;
-let {i, j
+    g} = obj;
+let {h, i
 } = obj;
 let {
-    k, l} = obj;
-let {m,
-    n} = obj;
-let {o = function() {
+    j, k} = obj;
+let {l = function() {
     dosomething();
 }} = obj;
 ```
@@ -385,13 +381,15 @@ let {i, j} = obj;
 let {
     k, l
 } = obj;
+let {m,
+    n} = obj;
 let {
-    m,
-    n
+    o,
+    p
 } = obj;
-let {o = function() {dosomething();}} = obj;
+let {q = function() {dosomething();}} = obj;
 let {
-    p = function() {
+    r = function() {
         dosomething();
     }
 } = obj;

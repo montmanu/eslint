@@ -10,7 +10,7 @@
 //------------------------------------------------------------------------------
 
 const rule = require("../../../lib/rules/prefer-template");
-const RuleTester = require("../../../lib/testers/rule-tester");
+const { RuleTester } = require("../../../lib/rule-tester");
 
 //------------------------------------------------------------------------------
 // Tests
@@ -196,6 +196,16 @@ ruleTester.run("prefer-template", rule, {
         },
         {
             code: "foo + '\\n other text \\033'",
+            output: null,
+            errors
+        },
+        {
+            code: "foo + '\\0\\1'",
+            output: null,
+            errors
+        },
+        {
+            code: "foo + '\\08'",
             output: null,
             errors
         },

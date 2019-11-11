@@ -10,7 +10,7 @@
 //------------------------------------------------------------------------------
 
 const rule = require("../../../lib/rules/quotes"),
-    RuleTester = require("../../../lib/testers/rule-tester");
+    { RuleTester } = require("../../../lib/rule-tester");
 
 const ruleTester = new RuleTester();
 
@@ -67,9 +67,9 @@ ruleTester.run("quotes", rule, {
         { code: "(() => { \"use strict\"; \"use strong\"; \"use asm\"; var foo = `backtick`; })();", options: ["backtick"], parserOptions: { ecmaVersion: 6 } },
 
         // `backtick` should not warn import/export sources.
-        { code: "import \"a\"; import 'b';", options: ["backtick"], parserOptions: { sourceType: "module" } },
-        { code: "import a from \"a\"; import b from 'b';", options: ["backtick"], parserOptions: { sourceType: "module" } },
-        { code: "export * from \"a\"; export * from 'b';", options: ["backtick"], parserOptions: { sourceType: "module" } },
+        { code: "import \"a\"; import 'b';", options: ["backtick"], parserOptions: { ecmaVersion: 6, sourceType: "module" } },
+        { code: "import a from \"a\"; import b from 'b';", options: ["backtick"], parserOptions: { ecmaVersion: 6, sourceType: "module" } },
+        { code: "export * from \"a\"; export * from 'b';", options: ["backtick"], parserOptions: { ecmaVersion: 6, sourceType: "module" } },
 
         // `backtick` should not warn property/method names (not computed).
         { code: "var obj = {\"key0\": 0, 'key1': 1};", options: ["backtick"], parserOptions: { ecmaVersion: 6 } },
@@ -160,30 +160,35 @@ ruleTester.run("quotes", rule, {
             code: "var foo = 'bar';",
             output: "var foo = `bar`;",
             options: ["backtick"],
+            parserOptions: { ecmaVersion: 2015 },
             errors: [{ message: "Strings must use backtick.", type: "Literal" }]
         },
         {
             code: "var foo = 'b${x}a$r';",
             output: "var foo = `b\\${x}a$r`;",
             options: ["backtick"],
+            parserOptions: { ecmaVersion: 2015 },
             errors: [{ message: "Strings must use backtick.", type: "Literal" }]
         },
         {
             code: "var foo = \"bar\";",
             output: "var foo = `bar`;",
             options: ["backtick"],
+            parserOptions: { ecmaVersion: 2015 },
             errors: [{ message: "Strings must use backtick.", type: "Literal" }]
         },
         {
             code: "var foo = \"bar\";",
             output: "var foo = `bar`;",
             options: ["backtick", { avoidEscape: true }],
+            parserOptions: { ecmaVersion: 2015 },
             errors: [{ message: "Strings must use backtick.", type: "Literal" }]
         },
         {
             code: "var foo = 'bar';",
             output: "var foo = `bar`;",
             options: ["backtick", { avoidEscape: true }],
+            parserOptions: { ecmaVersion: 2015 },
             errors: [{ message: "Strings must use backtick.", type: "Literal" }]
         },
 
@@ -255,7 +260,7 @@ ruleTester.run("quotes", rule, {
             code: "<div blah={'blah'} />",
             output: "<div blah={`blah`} />",
             options: ["backtick"],
-            parserOptions: { ecmaFeatures: { jsx: true } },
+            parserOptions: { ecmaFeatures: { jsx: true }, ecmaVersion: 2015 },
             errors: [
                 { message: "Strings must use backtick.", type: "Literal" }
             ]
@@ -323,6 +328,96 @@ ruleTester.run("quotes", rule, {
             output: "\"\"``",
             parserOptions: { ecmaVersion: 6 },
             errors: [{ message: "Strings must use doublequote.", type: "TemplateLiteral", line: 1, column: 1 }]
+        },
+
+        // Strings containing octal escape sequences. Don't autofix to backticks.
+        {
+            code: "var foo = \"\\1\"",
+            output: "var foo = '\\1'",
+            options: ["single"],
+            errors: [
+                { message: "Strings must use singlequote.", type: "Literal" }
+            ]
+        },
+        {
+            code: "var foo = '\\1'",
+            output: "var foo = \"\\1\"",
+            options: ["double"],
+            errors: [
+                { message: "Strings must use doublequote.", type: "Literal" }
+            ]
+        },
+        {
+            code: "var notoctal = '\\0'",
+            output: "var notoctal = `\\0`",
+            options: ["backtick"],
+            parserOptions: { ecmaVersion: 6 },
+            errors: [
+                { message: "Strings must use backtick.", type: "Literal" }
+            ]
+        },
+        {
+            code: "var foo = '\\1'",
+            output: null,
+            options: ["backtick"],
+            parserOptions: { ecmaVersion: 6 },
+            errors: [
+                { message: "Strings must use backtick.", type: "Literal" }
+            ]
+        },
+        {
+            code: "var foo = \"\\1\"",
+            output: null,
+            options: ["backtick"],
+            parserOptions: { ecmaVersion: 6 },
+            errors: [
+                { message: "Strings must use backtick.", type: "Literal" }
+            ]
+        },
+        {
+            code: "var foo = '\\01'",
+            output: null,
+            options: ["backtick"],
+            parserOptions: { ecmaVersion: 6 },
+            errors: [
+                { message: "Strings must use backtick.", type: "Literal" }
+            ]
+        },
+        {
+            code: "var foo = '\\0\\1'",
+            output: null,
+            options: ["backtick"],
+            parserOptions: { ecmaVersion: 6 },
+            errors: [
+                { message: "Strings must use backtick.", type: "Literal" }
+            ]
+        },
+        {
+            code: "var foo = '\\08'",
+            output: null,
+            options: ["backtick"],
+            parserOptions: { ecmaVersion: 6 },
+            errors: [
+                { message: "Strings must use backtick.", type: "Literal" }
+            ]
+        },
+        {
+            code: "var foo = 'prefix \\33'",
+            output: null,
+            options: ["backtick"],
+            parserOptions: { ecmaVersion: 6 },
+            errors: [
+                { message: "Strings must use backtick.", type: "Literal" }
+            ]
+        },
+        {
+            code: "var foo = 'prefix \\75 sufix'",
+            output: null,
+            options: ["backtick"],
+            parserOptions: { ecmaVersion: 6 },
+            errors: [
+                { message: "Strings must use backtick.", type: "Literal" }
+            ]
         }
     ]
 });

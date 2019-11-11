@@ -6,70 +6,33 @@ ESLint is a tool for identifying and reporting on patterns found in ECMAScript/J
 * ESLint uses an AST to evaluate patterns in code.
 * ESLint is completely pluggable, every single rule is a plugin and you can add more at runtime.
 
-## Getting Started Tutorial
-
-<iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/hppJw2REb8g?rel=0" frameborder="0" allowfullscreen></iframe>
-*Why ESLint* @0:00, *Installing and using ESLint* @2:20.  <a href="https://www.pluralsight.com/courses/eslint-better-code-quality?utm_source=eslint-dot-org&utm_medium=video&utm_campaign=authordemo" target="_blank">Full ESLint Course at Pluralsight</a>
-
 ## Installation and Usage
 
-Prerequisites: [Node.js](https://nodejs.org/en/) (>=6.14), npm version 3+.
+Prerequisites: [Node.js](https://nodejs.org/en/) (`^8.10.0`, `^10.13.0`, or `>=11.10.1`) built with SSL support. (If you are using an official Node.js distribution, SSL is always built in.)
 
-There are two ways to install ESLint: globally and locally.
-
-### Local Installation and Usage
-
-If you want to include ESLint as part of your project's build system, we recommend installing it locally. You can do so using npm:
+You can install ESLint using npm or yarn:
 
 ```
-$ npm install eslint --save-dev
+npm install eslint --save-dev
+
+# or
+
+yarn add eslint --dev
 ```
 
-You should then setup a configuration file:
+You should then set up a configuration file:
 
 ```
-$ ./node_modules/.bin/eslint --init
-```
-
-After that, you can run ESLint in your project's root directory like this:
-
-```
-$ ./node_modules/.bin/eslint yourfile.js
-```
-
-Instead of navigating to `./node_modules/.bin/` you may also use `npx` to run `eslint`:
-
-```
-$ npx eslint
-```
-
-**Note:** If ESLint wasn't manually installed (via `npm`), `npx` will install `eslint` to a temporary directory and execute it.
-
-Any plugins or shareable configs that you use must also be installed locally to work with a locally-installed ESLint.
-
-### Global Installation and Usage
-
-If you want to make ESLint available to tools that run across all of your projects, we recommend installing ESLint globally. You can do so using npm:
-
-```
-$ npm install -g eslint
-```
-
-You should then setup a configuration file:
-
-```
-$ eslint --init
+$ npx eslint --init
 ```
 
 After that, you can run ESLint on any file or directory like this:
 
 ```
-$ eslint yourfile.js
+$ npx eslint yourfile.js
 ```
 
-Any plugins or shareable configs that you use must also be installed globally to work with a globally-installed ESLint.
-
-**Note:** `eslint --init` is intended for setting up and configuring ESLint on a per-project basis and will perform a local installation of ESLint and its plugins in the directory in which it is run. If you prefer using a global installation of ESLint, any plugins used in your configuration must also be installed globally.
+It is also possible to install ESLint globally rather than locally (using `npm install eslint --global`). However, this is not recommended, and any plugins or shareable configs that you use must be installed locally in either case.
 
 ## Configuration
 
@@ -97,7 +60,9 @@ The three error levels allow you fine-grained control over how ESLint applies ru
 Your `.eslintrc` configuration file will also include the line:
 
 ```json
+{
     "extends": "eslint:recommended"
+}
 ```
 
 Because of this line, all of the rules marked "(recommended)" on the [rules page](/docs/rules) will be turned on.  Alternatively, you can use configurations that others have created by searching for "eslint-config" on [npmjs.com](https://www.npmjs.com/search?q=eslint-config).  ESLint will not lint your code unless you extend from a shared configuration or explicitly turn rules on in your configuration.

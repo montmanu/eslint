@@ -10,13 +10,13 @@
 //------------------------------------------------------------------------------
 
 const rule = require("../../../lib/rules/no-restricted-imports"),
-    RuleTester = require("../../../lib/testers/rule-tester");
+    { RuleTester } = require("../../../lib/rule-tester");
 
 //------------------------------------------------------------------------------
 // Tests
 //------------------------------------------------------------------------------
 
-const ruleTester = new RuleTester({ parserOptions: { sourceType: "module" } });
+const ruleTester = new RuleTester({ parserOptions: { ecmaVersion: 6, sourceType: "module" } });
 
 ruleTester.run("no-restricted-imports", rule, {
     valid: [
@@ -272,7 +272,7 @@ ruleTester.run("no-restricted-imports", rule, {
             }]
         }],
         errors: [{
-            message: "* import is invalid because 'DisallowedObject' from 'foo' is restricted.",
+            message: "* import is invalid because 'DisallowedObject' from 'foo' is restricted. Please import 'DisallowedObject' from /bar/ instead.",
             type: "ImportDeclaration"
         }]
     },
@@ -398,7 +398,7 @@ ruleTester.run("no-restricted-imports", rule, {
             }]
         }],
         errors: [{
-            message: "* import is invalid because 'DisallowedObject' from 'foo' is restricted.",
+            message: "* import is invalid because 'DisallowedObject' from 'foo' is restricted. Please import 'DisallowedObject' from /bar/ instead.",
             type: "ImportDeclaration"
         }]
     },
@@ -412,7 +412,7 @@ ruleTester.run("no-restricted-imports", rule, {
             }]
         }],
         errors: [{
-            message: "* import is invalid because 'DisallowedObject,DisallowedObjectTwo' from 'foo' is restricted.",
+            message: "* import is invalid because 'DisallowedObject,DisallowedObjectTwo' from 'foo' is restricted. Please import 'DisallowedObject' and 'DisallowedObjectTwo' from /bar/ instead.",
             type: "ImportDeclaration"
         }]
     }

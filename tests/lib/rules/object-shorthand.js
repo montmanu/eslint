@@ -10,7 +10,8 @@
 //------------------------------------------------------------------------------
 
 const rule = require("../../../lib/rules/object-shorthand"),
-    RuleTester = require("../../../lib/testers/rule-tester");
+    { RuleTester } = require("../../../lib/rule-tester");
+const { unIndent } = require("../_utils");
 
 //------------------------------------------------------------------------------
 // Tests
@@ -132,11 +133,43 @@ ruleTester.run("object-shorthand", rule, {
             options: ["always", { ignoreConstructors: true }]
         },
         {
+            code: "var x = {_ConstructorFunction: function(){}, a: b}",
+            options: ["always", { ignoreConstructors: true }]
+        },
+        {
+            code: "var x = {$ConstructorFunction: function(){}, a: b}",
+            options: ["always", { ignoreConstructors: true }]
+        },
+        {
+            code: "var x = {__ConstructorFunction: function(){}, a: b}",
+            options: ["always", { ignoreConstructors: true }]
+        },
+        {
+            code: "var x = {_0ConstructorFunction: function(){}, a: b}",
+            options: ["always", { ignoreConstructors: true }]
+        },
+        {
             code: "var x = {notConstructorFunction(){}, b: c}",
             options: ["always", { ignoreConstructors: true }]
         },
         {
             code: "var x = {ConstructorFunction: function(){}, a: b}",
+            options: ["methods", { ignoreConstructors: true }]
+        },
+        {
+            code: "var x = {_ConstructorFunction: function(){}, a: b}",
+            options: ["methods", { ignoreConstructors: true }]
+        },
+        {
+            code: "var x = {$ConstructorFunction: function(){}, a: b}",
+            options: ["methods", { ignoreConstructors: true }]
+        },
+        {
+            code: "var x = {__ConstructorFunction: function(){}, a: b}",
+            options: ["methods", { ignoreConstructors: true }]
+        },
+        {
+            code: "var x = {_0ConstructorFunction: function(){}, a: b}",
             options: ["methods", { ignoreConstructors: true }]
         },
         {
@@ -708,6 +741,46 @@ ruleTester.run("object-shorthand", rule, {
             errors: [LONGFORM_PROPERTY_ERROR]
         },
 
+        // ignoreConstructors
+        {
+            code: "var x = {y: function() {}}",
+            output: "var x = {y() {}}",
+            options: ["methods", { ignoreConstructors: true }],
+            errors: [METHOD_ERROR]
+        },
+        {
+
+            // https://github.com/eslint/eslint/issues/11595
+            code: "var x = {_y: function() {}}",
+            output: "var x = {_y() {}}",
+            options: ["methods", { ignoreConstructors: true }],
+            errors: [METHOD_ERROR]
+        },
+        {
+
+            // https://github.com/eslint/eslint/issues/11595
+            code: "var x = {$y: function() {}}",
+            output: "var x = {$y() {}}",
+            options: ["methods", { ignoreConstructors: true }],
+            errors: [METHOD_ERROR]
+        },
+        {
+
+            // https://github.com/eslint/eslint/issues/11595
+            code: "var x = {__y: function() {}}",
+            output: "var x = {__y() {}}",
+            options: ["methods", { ignoreConstructors: true }],
+            errors: [METHOD_ERROR]
+        },
+        {
+
+            // https://github.com/eslint/eslint/issues/11595
+            code: "var x = {_0y: function() {}}",
+            output: "var x = {_0y() {}}",
+            options: ["methods", { ignoreConstructors: true }],
+            errors: [METHOD_ERROR]
+        },
+
         // avoidQuotes
         {
             code: "var x = {a: a}",
@@ -998,6 +1071,36 @@ ruleTester.run("object-shorthand", rule, {
             options: ["always", { avoidExplicitReturnArrows: true }],
             errors: [METHOD_ERROR]
         },
+        {
+            code: "({ a: ((arg) => { return foo; }) })",
+            output: "({ a(arg) { return foo; } })",
+            options: ["always", { avoidExplicitReturnArrows: true }],
+            errors: [METHOD_ERROR]
+        },
+        {
+            code: "({ a: ((arg, arg2) => { return foo; }) })",
+            output: "({ a(arg, arg2) { return foo; } })",
+            options: ["always", { avoidExplicitReturnArrows: true }],
+            errors: [METHOD_ERROR]
+        },
+        {
+            code: "({ a: (async () => { return foo; }) })",
+            output: "({ async a() { return foo; } })",
+            options: ["always", { avoidExplicitReturnArrows: true }],
+            errors: [METHOD_ERROR]
+        },
+        {
+            code: "({ a: (async (arg) => { return foo; }) })",
+            output: "({ async a(arg) { return foo; } })",
+            options: ["always", { avoidExplicitReturnArrows: true }],
+            errors: [METHOD_ERROR]
+        },
+        {
+            code: "({ a: (async (arg, arg2) => { return foo; }) })",
+            output: "({ async a(arg, arg2) { return foo; } })",
+            options: ["always", { avoidExplicitReturnArrows: true }],
+            errors: [METHOD_ERROR]
+        },
 
         // async generators
         {
@@ -1011,6 +1114,67 @@ ruleTester.run("object-shorthand", rule, {
             output: "({ a: async function*() {} })",
             options: ["never"],
             errors: [LONGFORM_METHOD_ERROR]
+        },
+
+        // typescript: arrow function should preserve the return value
+        {
+            code: unIndent`
+                const test = {
+                    key: (): void => {x()},
+                    key: ( (): void => {x()} ),
+                    key: ( (): (void) => {x()} ),
+
+                    key: (arg: t): void => {x()},
+                    key: ( (arg: t): void => {x()} ),
+                    key: ( (arg: t): (void) => {x()} ),
+
+                    key: (arg: t, arg2: t): void => {x()},
+                    key: ( (arg: t, arg2: t): void => {x()} ),
+                    key: ( (arg: t, arg2: t): (void) => {x()} ),
+
+                    key: async (): void => {x()},
+                    key: ( async (): void => {x()} ),
+                    key: ( async (): (void) => {x()} ),
+
+                    key: async (arg: t): void => {x()},
+                    key: ( async (arg: t): void => {x()} ),
+                    key: ( async (arg: t): (void) => {x()} ),
+
+                    key: async (arg: t, arg2: t): void => {x()},
+                    key: ( async (arg: t, arg2: t): void => {x()} ),
+                    key: ( async (arg: t, arg2: t): (void) => {x()} ),
+                }
+            `,
+            output: unIndent`
+                const test = {
+                    key(): void {x()},
+                    key(): void {x()},
+                    key(): (void) {x()},
+
+                    key(arg: t): void {x()},
+                    key(arg: t): void {x()},
+                    key(arg: t): (void) {x()},
+
+                    key(arg: t, arg2: t): void {x()},
+                    key(arg: t, arg2: t): void {x()},
+                    key(arg: t, arg2: t): (void) {x()},
+
+                    async key(): void {x()},
+                    async key(): void {x()},
+                    async key(): (void) {x()},
+
+                    async key(arg: t): void {x()},
+                    async key(arg: t): void {x()},
+                    async key(arg: t): (void) {x()},
+
+                    async key(arg: t, arg2: t): void {x()},
+                    async key(arg: t, arg2: t): void {x()},
+                    async key(arg: t, arg2: t): (void) {x()},
+                }
+            `,
+            options: ["always", { avoidExplicitReturnArrows: true }],
+            parser: require.resolve("../../fixtures/parsers/typescript-parsers/object-with-arrow-fn-props"),
+            errors: Array(18).fill(METHOD_ERROR)
         }
     ]
 });

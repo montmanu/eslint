@@ -10,7 +10,7 @@
 //------------------------------------------------------------------------------
 
 const rule = require("../../../lib/rules/no-extra-parens"),
-    RuleTester = require("../../../lib/testers/rule-tester");
+    { RuleTester } = require("../../../lib/rule-tester");
 
 /**
  * Create error message object for failure cases
@@ -44,7 +44,7 @@ function invalid(code, output, type, line, config) {
 
 const ruleTester = new RuleTester({
     parserOptions: {
-        ecmaVersion: 2018,
+        ecmaVersion: 2020,
         ecmaFeatures: {
             jsx: true
         }
@@ -95,8 +95,21 @@ ruleTester.run("no-extra-parens", rule, {
         "new A()()",
         "(new A)()",
         "(new (Foo || Bar))()",
+        "(new new foo())()",
+        "new (new new foo())(bar)",
+        "(new foo).bar",
+        "(new foo)[bar]",
+        "(new foo).bar.baz",
+        "(new foo.bar).baz",
+        "(new foo).bar()",
+        "(new foo.bar).baz()",
+        "new (new foo).bar",
+        "new (new foo.bar).baz",
+        "(new new foo()).baz",
         "(2 + 3) ** 4",
         "2 ** (2 + 3)",
+        "new (import(source))",
+        "import((s,t))",
 
         // same precedence
         "a, b, c",
@@ -148,7 +161,25 @@ ruleTester.run("no-extra-parens", rule, {
         "var a = (b, c);",
         "[]",
         "[a, b]",
+        "!{a}",
         "!{a: 0, b: 1}",
+        "!{[a]:0}",
+        "!{[(a, b)]:0}",
+        "!{a, ...b}",
+        "const {a} = {}",
+        "const {a:b} = {}",
+        "const {a:b=1} = {}",
+        "const {[a]:b} = {}",
+        "const {[a]:b=1} = {}",
+        "const {[(a, b)]:c} = {}",
+        "const {a, ...b} = {}",
+        "class foo {}",
+        "class foo { constructor(){} a(){} get b(){} set b(bar){} get c(){} set d(baz){} static e(){} }",
+        "class foo { [a](){} get [b](){} set [b](bar){} get [c](){} set [d](baz){} static [e](){} }",
+        "class foo { [(a,b)](){} }",
+        "class foo { a(){} [b](){} c(){} [(d,e)](){} }",
+        "class foo { [(a,b)](){} c(){} [d](){} e(){} }",
+        "const foo = class { constructor(){} a(){} get b(){} set b(bar){} get c(){} set d(baz){} static e(){} }",
 
         // ExpressionStatement restricted productions
         "({});",
@@ -419,6 +450,20 @@ ruleTester.run("no-extra-parens", rule, {
         { code: "var a = b => 1 ? 2 : 3", options: ["all", { enforceForArrowConditionals: false }] },
         { code: "var a = (b) => (1 ? 2 : 3)", options: ["all", { enforceForArrowConditionals: false }] },
 
+        // ["all", { enforceForSequenceExpressions: false }]
+        { code: "(a, b)", options: ["all", { enforceForSequenceExpressions: false }] },
+        { code: "(foo(), bar());", options: ["all", { enforceForSequenceExpressions: false }] },
+        { code: "if((a, b)){}", options: ["all", { enforceForSequenceExpressions: false }] },
+        { code: "while ((val = foo(), val < 10));", options: ["all", { enforceForSequenceExpressions: false }] },
+
+        // ["all", { enforceForNewInMemberExpressions: false }]
+        { code: "(new foo()).bar", options: ["all", { enforceForNewInMemberExpressions: false }] },
+        { code: "(new foo())[bar]", options: ["all", { enforceForNewInMemberExpressions: false }] },
+        { code: "(new foo()).bar()", options: ["all", { enforceForNewInMemberExpressions: false }] },
+        { code: "(new foo(bar)).baz", options: ["all", { enforceForNewInMemberExpressions: false }] },
+        { code: "(new foo.bar()).baz", options: ["all", { enforceForNewInMemberExpressions: false }] },
+        { code: "(new foo.bar()).baz()", options: ["all", { enforceForNewInMemberExpressions: false }] },
+
         "let a = [ ...b ]",
         "let a = { ...b }",
         {
@@ -442,11 +487,11 @@ ruleTester.run("no-extra-parens", rule, {
         "() => ({ foo: 1 }.foo().bar + baz)",
         {
             code: "export default (function(){}).foo",
-            parserOptions: { sourceType: "module" }
+            parserOptions: { ecmaVersion: 6, sourceType: "module" }
         },
         {
             code: "export default (class{}).foo",
-            parserOptions: { sourceType: "module" }
+            parserOptions: { ecmaVersion: 6, sourceType: "module" }
         },
         "({}).hasOwnProperty.call(foo, bar)",
         "({}) ? foo() : bar()",
@@ -466,7 +511,36 @@ ruleTester.run("no-extra-parens", rule, {
         "for ((let) in foo);",
         "for ((let[foo]) in bar);",
         "for ((let)[foo] in bar);",
-        "for ((let[foo].bar) in baz);"
+        "for ((let[foo].bar) in baz);",
+
+        // https://github.com/eslint/eslint/issues/11706 (also in invalid[])
+        "for (let a = (b in c); ;);",
+        "for (let a = (b && c in d); ;);",
+        "for (let a = (b in c && d); ;);",
+        "for (let a = (b => b in c); ;);",
+        "for (let a = b => (b in c); ;);",
+        "for (let a = (b in c in d); ;);",
+        "for (let a = (b in c), d = (e in f); ;);",
+        "for (let a = (b => c => b in c); ;);",
+        "for (let a = (b && c && d in e); ;);",
+        "for (let a = b && (c in d); ;);",
+        "for (let a = (b in c) && (d in e); ;);",
+        "for ((a in b); ;);",
+        "for (a = (b in c); ;);",
+        "for ((a in b && c in d && e in f); ;);",
+        "for (let a = [] && (b in c); ;);",
+        "for (let a = (b in [c]); ;);",
+        "for (let a = b => (c in d); ;);",
+        "for (let a = (b in c) ? d : e; ;);",
+        "for (let a = (b in c ? d : e); ;);",
+        "for (let a = b ? c : (d in e); ;);",
+        "for (let a = (b in c), d = () => { for ((e in f);;); for ((g in h);;); }; ;); for((i in j); ;);",
+
+        // https://github.com/eslint/eslint/issues/11706 regression tests (also in invalid[])
+        "for (let a = b; a; a); a; a;",
+        "for (a; a; a); a; a;",
+        "for (; a; a); a; a;",
+        "for (let a = (b && c) === d; ;);"
     ],
 
     invalid: [
@@ -485,6 +559,50 @@ ruleTester.run("no-extra-parens", rule, {
         invalid("do; while((0))", "do; while(0)", "Literal"),
         invalid("for(a in (0));", "for(a in 0);", "Literal"),
         invalid("for(a of (0));", "for(a of 0);", "Literal", 1),
+        invalid("const foo = {[(a)]:1}", "const foo = {[a]:1}", "Identifier", 1),
+        invalid("const foo = {[(a=b)]:1}", "const foo = {[a=b]:1}", "AssignmentExpression", 1),
+        invalid("const foo = {*[(Symbol.iterator)]() {}}", "const foo = {*[Symbol.iterator]() {}}", "MemberExpression", 1),
+        invalid("const foo = { get [(a)]() {}}", "const foo = { get [a]() {}}", "Identifier", 1),
+        invalid("const foo = {[(a+b)]:c, d}", "const foo = {[a+b]:c, d}", "BinaryExpression", 1),
+        invalid("const foo = {a, [(b+c)]:d, e}", "const foo = {a, [b+c]:d, e}", "BinaryExpression", 1),
+        invalid("const foo = {[(a+b)]:c, d:e}", "const foo = {[a+b]:c, d:e}", "BinaryExpression", 1),
+        invalid("const foo = {a:b, [(c+d)]:e, f:g}", "const foo = {a:b, [c+d]:e, f:g}", "BinaryExpression", 1),
+        invalid("const foo = {[(a+b)]:c, [d]:e}", "const foo = {[a+b]:c, [d]:e}", "BinaryExpression", 1),
+        invalid("const foo = {[a]:b, [(c+d)]:e, [f]:g}", "const foo = {[a]:b, [c+d]:e, [f]:g}", "BinaryExpression", 1),
+        invalid("const foo = {[(a+b)]:c, [(d,e)]:f}", "const foo = {[a+b]:c, [(d,e)]:f}", "BinaryExpression", 1),
+        invalid("const foo = {[(a,b)]:c, [(d+e)]:f, [(g,h)]:e}", "const foo = {[(a,b)]:c, [d+e]:f, [(g,h)]:e}", "BinaryExpression", 1),
+        invalid("const foo = {a, b:c, [(d+e)]:f, [(g,h)]:i, [j]:k}", "const foo = {a, b:c, [d+e]:f, [(g,h)]:i, [j]:k}", "BinaryExpression", 1),
+        invalid("const foo = {[a+(b*c)]:d}", "const foo = {[a+b*c]:d}", "BinaryExpression", 1),
+        invalid("const foo = {[(a, (b+c))]:d}", "const foo = {[(a, b+c)]:d}", "BinaryExpression", 1),
+        invalid("const {[(a)]:b} = {}", "const {[a]:b} = {}", "Identifier", 1),
+        invalid("const {[(a=b)]:c=1} = {}", "const {[a=b]:c=1} = {}", "AssignmentExpression", 1),
+        invalid("const {[(a+b)]:c, d} = {}", "const {[a+b]:c, d} = {}", "BinaryExpression", 1),
+        invalid("const {a, [(b+c)]:d, e} = {}", "const {a, [b+c]:d, e} = {}", "BinaryExpression", 1),
+        invalid("const {[(a+b)]:c, d:e} = {}", "const {[a+b]:c, d:e} = {}", "BinaryExpression", 1),
+        invalid("const {a:b, [(c+d)]:e, f:g} = {}", "const {a:b, [c+d]:e, f:g} = {}", "BinaryExpression", 1),
+        invalid("const {[(a+b)]:c, [d]:e} = {}", "const {[a+b]:c, [d]:e} = {}", "BinaryExpression", 1),
+        invalid("const {[a]:b, [(c+d)]:e, [f]:g} = {}", "const {[a]:b, [c+d]:e, [f]:g} = {}", "BinaryExpression", 1),
+        invalid("const {[(a+b)]:c, [(d,e)]:f} = {}", "const {[a+b]:c, [(d,e)]:f} = {}", "BinaryExpression", 1),
+        invalid("const {[(a,b)]:c, [(d+e)]:f, [(g,h)]:e} = {}", "const {[(a,b)]:c, [d+e]:f, [(g,h)]:e} = {}", "BinaryExpression", 1),
+        invalid("const {a, b:c, [(d+e)]:f, [(g,h)]:i, [j]:k} = {}", "const {a, b:c, [d+e]:f, [(g,h)]:i, [j]:k} = {}", "BinaryExpression", 1),
+        invalid("const {[a+(b*c)]:d} = {}", "const {[a+b*c]:d} = {}", "BinaryExpression", 1),
+        invalid("const {[(a, (b+c))]:d} = {}", "const {[(a, b+c)]:d} = {}", "BinaryExpression", 1),
+        invalid("class foo { [(a)](){} }", "class foo { [a](){} }", "Identifier"),
+        invalid("class foo {*[(Symbol.iterator)]() {}}", "class foo {*[Symbol.iterator]() {}}", "MemberExpression"),
+        invalid("class foo { get [(a)](){} }", "class foo { get [a](){} }", "Identifier"),
+        invalid("class foo { set [(a)](bar){} }", "class foo { set [a](bar){} }", "Identifier"),
+        invalid("class foo { static [(a)](bar){} }", "class foo { static [a](bar){} }", "Identifier"),
+        invalid("class foo { [(a=b)](){} }", "class foo { [a=b](){} }", "AssignmentExpression"),
+        invalid("class foo { constructor (){} [(a+b)](){} }", "class foo { constructor (){} [a+b](){} }", "BinaryExpression"),
+        invalid("class foo { [(a+b)](){} constructor (){} }", "class foo { [a+b](){} constructor (){} }", "BinaryExpression"),
+        invalid("class foo { [(a+b)](){} c(){} }", "class foo { [a+b](){} c(){} }", "BinaryExpression"),
+        invalid("class foo { a(){} [(b+c)](){} d(){} }", "class foo { a(){} [b+c](){} d(){} }", "BinaryExpression"),
+        invalid("class foo { [(a+b)](){} [c](){} }", "class foo { [a+b](){} [c](){} }", "BinaryExpression"),
+        invalid("class foo { [a](){} [(b+c)](){} [d](){} }", "class foo { [a](){} [b+c](){} [d](){} }", "BinaryExpression"),
+        invalid("class foo { [(a+b)](){} [(c,d)](){} }", "class foo { [a+b](){} [(c,d)](){} }", "BinaryExpression"),
+        invalid("class foo { [(a,b)](){} [(c+d)](){} }", "class foo { [(a,b)](){} [c+d](){} }", "BinaryExpression"),
+        invalid("class foo { [a+(b*c)](){} }", "class foo { [a+b*c](){} }", "BinaryExpression"),
+        invalid("const foo = class { [(a)](){} }", "const foo = class { [a](){} }", "Identifier"),
         invalid(
             "var foo = (function*() { if ((yield foo())) { return; } }())",
             "var foo = (function*() { if (yield foo()) { return; } }())",
@@ -548,6 +666,12 @@ ruleTester.run("no-extra-parens", rule, {
         invalid("(foo()).bar", "foo().bar", "CallExpression"),
         invalid("(foo.bar()).baz", "foo.bar().baz", "CallExpression"),
         invalid("(foo\n.bar())\n.baz", "foo\n.bar()\n.baz", "CallExpression"),
+        invalid("(new foo()).bar", "new foo().bar", "NewExpression"),
+        invalid("(new foo())[bar]", "new foo()[bar]", "NewExpression"),
+        invalid("(new foo()).bar()", "new foo().bar()", "NewExpression"),
+        invalid("(new foo(bar)).baz", "new foo(bar).baz", "NewExpression"),
+        invalid("(new foo.bar()).baz", "new foo.bar().baz", "NewExpression"),
+        invalid("(new foo.bar()).baz()", "new foo.bar().baz()", "NewExpression"),
 
         invalid("new (A)", "new A", "Identifier"),
         invalid("(new A())()", "new A()()", "NewExpression"),
@@ -743,7 +867,7 @@ ruleTester.run("no-extra-parens", rule, {
             options: ["all", { returnAssign: false }],
             errors: [
                 {
-                    messgeId: "unexpected",
+                    messageId: "unexpected",
                     type: "LogicalExpression"
                 }
             ]
@@ -753,7 +877,7 @@ ruleTester.run("no-extra-parens", rule, {
             output: "function a(b) { return (b = c) || (d = e); }",
             errors: [
                 {
-                    messgeId: "unexpected",
+                    messageId: "unexpected",
                     type: "LogicalExpression"
                 }
             ]
@@ -763,7 +887,7 @@ ruleTester.run("no-extra-parens", rule, {
             output: "function a(b) { return b = 1; }",
             errors: [
                 {
-                    messgeId: "unexpected",
+                    messageId: "unexpected",
                     type: "AssignmentExpression"
                 }
             ]
@@ -773,11 +897,11 @@ ruleTester.run("no-extra-parens", rule, {
             output: "function a(b) { return c ? d = b : e = b; }",
             errors: [
                 {
-                    messgeId: "unexpected",
+                    messageId: "unexpected",
                     type: "AssignmentExpression"
                 },
                 {
-                    messgeId: "unexpected",
+                    messageId: "unexpected",
                     type: "AssignmentExpression"
                 }
             ]
@@ -789,7 +913,7 @@ ruleTester.run("no-extra-parens", rule, {
 
             errors: [
                 {
-                    messgeId: "unexpected",
+                    messageId: "unexpected",
                     type: "LogicalExpression"
                 }
             ]
@@ -799,7 +923,7 @@ ruleTester.run("no-extra-parens", rule, {
             output: "b => (b = c) || (d = e);",
             errors: [
                 {
-                    messgeId: "unexpected",
+                    messageId: "unexpected",
                     type: "LogicalExpression"
                 }
             ]
@@ -809,7 +933,7 @@ ruleTester.run("no-extra-parens", rule, {
             output: "b => b = 1;",
             errors: [
                 {
-                    messgeId: "unexpected",
+                    messageId: "unexpected",
                     type: "AssignmentExpression"
                 }
             ]
@@ -819,11 +943,11 @@ ruleTester.run("no-extra-parens", rule, {
             output: "b => c ? d = b : e = b;",
             errors: [
                 {
-                    messgeId: "unexpected",
+                    messageId: "unexpected",
                     type: "AssignmentExpression"
                 },
                 {
-                    messgeId: "unexpected",
+                    messageId: "unexpected",
                     type: "AssignmentExpression"
                 }
             ]
@@ -834,7 +958,7 @@ ruleTester.run("no-extra-parens", rule, {
             options: ["all", { returnAssign: false }],
             errors: [
                 {
-                    messgeId: "unexpected",
+                    messageId: "unexpected",
                     type: "LogicalExpression"
                 }
             ]
@@ -844,7 +968,7 @@ ruleTester.run("no-extra-parens", rule, {
             output: "b => { return (b = c) || (d = e) };",
             errors: [
                 {
-                    messgeId: "unexpected",
+                    messageId: "unexpected",
                     type: "LogicalExpression"
                 }
             ]
@@ -854,7 +978,7 @@ ruleTester.run("no-extra-parens", rule, {
             output: "b => { return b = 1 };",
             errors: [
                 {
-                    messgeId: "unexpected",
+                    messageId: "unexpected",
                     type: "AssignmentExpression"
                 }
             ]
@@ -864,11 +988,11 @@ ruleTester.run("no-extra-parens", rule, {
             output: "b => { return c ? d = b : e = b; }",
             errors: [
                 {
-                    messgeId: "unexpected",
+                    messageId: "unexpected",
                     type: "AssignmentExpression"
                 },
                 {
-                    messgeId: "unexpected",
+                    messageId: "unexpected",
                     type: "AssignmentExpression"
                 }
             ]
@@ -880,11 +1004,11 @@ ruleTester.run("no-extra-parens", rule, {
             output: "async function a() { await a + await b; }",
             errors: [
                 {
-                    messgeId: "unexpected",
+                    messageId: "unexpected",
                     type: "AwaitExpression"
                 },
                 {
-                    messgeId: "unexpected",
+                    messageId: "unexpected",
                     type: "AwaitExpression"
                 }
             ]
@@ -965,7 +1089,7 @@ ruleTester.run("no-extra-parens", rule, {
             options: ["all", { enforceForArrowConditionals: true }],
             errors: [
                 {
-                    messgeId: "unexpected"
+                    messageId: "unexpected"
                 }
             ]
         },
@@ -977,7 +1101,132 @@ ruleTester.run("no-extra-parens", rule, {
             options: ["all", { enforceForArrowConditionals: false }],
             errors: [
                 {
-                    messgeId: "unexpected"
+                    messageId: "unexpected"
+                }
+            ]
+        },
+
+        // ["all", { enforceForSequenceExpressions: true }]
+        {
+            code: "(a, b)",
+            output: "a, b",
+            options: ["all"],
+            errors: [
+                {
+                    messageId: "unexpected",
+                    type: "SequenceExpression"
+                }
+            ]
+        },
+        {
+            code: "(a, b)",
+            output: "a, b",
+            options: ["all", {}],
+            errors: [
+                {
+                    messageId: "unexpected",
+                    type: "SequenceExpression"
+                }
+            ]
+        },
+        {
+            code: "(a, b)",
+            output: "a, b",
+            options: ["all", { enforceForSequenceExpressions: true }],
+            errors: [
+                {
+                    messageId: "unexpected",
+                    type: "SequenceExpression"
+                }
+            ]
+        },
+        {
+            code: "(foo(), bar());",
+            output: "foo(), bar();",
+            options: ["all", { enforceForSequenceExpressions: true }],
+            errors: [
+                {
+                    messageId: "unexpected",
+                    type: "SequenceExpression"
+                }
+            ]
+        },
+        {
+            code: "if((a, b)){}",
+            output: "if(a, b){}",
+            options: ["all", { enforceForSequenceExpressions: true }],
+            errors: [
+                {
+                    messageId: "unexpected",
+                    type: "SequenceExpression"
+                }
+            ]
+        },
+        {
+            code: "while ((val = foo(), val < 10));",
+            output: "while (val = foo(), val < 10);",
+            options: ["all", { enforceForSequenceExpressions: true }],
+            errors: [
+                {
+                    messageId: "unexpected",
+                    type: "SequenceExpression"
+                }
+            ]
+        },
+
+        // ["all", { enforceForNewInMemberExpressions: true }]
+        {
+            code: "(new foo()).bar",
+            output: "new foo().bar",
+            options: ["all"],
+            errors: [
+                {
+                    messageId: "unexpected",
+                    type: "NewExpression"
+                }
+            ]
+        },
+        {
+            code: "(new foo()).bar",
+            output: "new foo().bar",
+            options: ["all", {}],
+            errors: [
+                {
+                    messageId: "unexpected",
+                    type: "NewExpression"
+                }
+            ]
+        },
+        {
+            code: "(new foo()).bar",
+            output: "new foo().bar",
+            options: ["all", { enforceForNewInMemberExpressions: true }],
+            errors: [
+                {
+                    messageId: "unexpected",
+                    type: "NewExpression"
+                }
+            ]
+        },
+        {
+            code: "(new foo())[bar]",
+            output: "new foo()[bar]",
+            options: ["all", { enforceForNewInMemberExpressions: true }],
+            errors: [
+                {
+                    messageId: "unexpected",
+                    type: "NewExpression"
+                }
+            ]
+        },
+        {
+            code: "(new foo.bar()).baz",
+            output: "new foo.bar().baz",
+            options: ["all", { enforceForNewInMemberExpressions: true }],
+            errors: [
+                {
+                    messageId: "unexpected",
+                    type: "NewExpression"
                 }
             ]
         },
@@ -1105,6 +1354,687 @@ ruleTester.run("no-extra-parens", rule, {
             "(let)",
             "Identifier",
             1
+        ),
+        invalid("let s = `${(v)}`", "let s = `${v}`", "Identifier"),
+        invalid("let s = `${(a, b)}`", "let s = `${a, b}`", "SequenceExpression"),
+        invalid("function foo(a = (b)) {}", "function foo(a = b) {}", "Identifier"),
+        invalid("const bar = (a = (b)) => a", "const bar = (a = b) => a", "Identifier"),
+        invalid("const [a = (b)] = []", "const [a = b] = []", "Identifier"),
+        invalid("const {a = (b)} = {}", "const {a = b} = {}", "Identifier"),
+
+        // https://github.com/eslint/eslint/issues/11706 (also in valid[])
+        {
+            code: "for ((a = (b in c)); ;);",
+            output: "for ((a = b in c); ;);",
+            errors: [
+                {
+                    messageId: "unexpected"
+                }
+            ]
+        },
+        {
+            code: "for (let a = ((b in c) && (d in e)); ;);",
+            output: "for (let a = (b in c && d in e); ;);",
+            errors: Array(2).fill(
+                {
+                    messageId: "unexpected"
+                }
+            )
+        },
+        {
+            code: "for (let a = ((b in c) in d); ;);",
+            output: "for (let a = (b in c in d); ;);",
+            errors: [
+                {
+                    messageId: "unexpected"
+                }
+            ]
+        },
+        {
+            code: "for (let a = (b && (c in d)), e = (f in g); ;);",
+            output: "for (let a = (b && c in d), e = (f in g); ;);",
+            errors: [
+                {
+                    messageId: "unexpected"
+                }
+            ]
+        },
+        {
+            code: "for (let a = (b + c), d = (e in f); ;);",
+            output: "for (let a = b + c, d = (e in f); ;);",
+            errors: [
+                {
+                    messageId: "unexpected"
+                }
+            ]
+        },
+        {
+            code: "for (let a = [(b in c)]; ;);",
+            output: "for (let a = [b in c]; ;);",
+            errors: [
+                {
+                    messageId: "unexpected"
+                }
+            ]
+        },
+        {
+            code: "for (let a = [b, (c in d)]; ;);",
+            output: "for (let a = [b, c in d]; ;);",
+            errors: [
+                {
+                    messageId: "unexpected"
+                }
+            ]
+        },
+        {
+            code: "for (let a = ([b in c]); ;);",
+            output: "for (let a = [b in c]; ;);",
+            errors: [
+                {
+                    messageId: "unexpected"
+                }
+            ]
+        },
+        {
+            code: "for (let a = ([b, c in d]); ;);",
+            output: "for (let a = [b, c in d]; ;);",
+            errors: [
+                {
+                    messageId: "unexpected"
+                }
+            ]
+        },
+        {
+            code: "for ((a = [b in c]); ;);",
+            output: "for (a = [b in c]; ;);",
+            errors: [
+                {
+                    messageId: "unexpected"
+                }
+            ]
+        },
+        {
+            code: "for (let a = [b && (c in d)]; ;);",
+            output: "for (let a = [b && c in d]; ;);",
+            errors: [
+                {
+                    messageId: "unexpected"
+                }
+            ]
+        },
+        {
+            code: "for (let a = [(b && c in d)]; ;);",
+            output: "for (let a = [b && c in d]; ;);",
+            errors: [
+                {
+                    messageId: "unexpected"
+                }
+            ]
+        },
+        {
+            code: "for (let a = ([b && c in d]); ;);",
+            output: "for (let a = [b && c in d]; ;);",
+            errors: [
+                {
+                    messageId: "unexpected"
+                }
+            ]
+        },
+        {
+            code: "for ((a = [b && c in d]); ;);",
+            output: "for (a = [b && c in d]; ;);",
+            errors: [
+                {
+                    messageId: "unexpected"
+                }
+            ]
+        },
+        {
+            code: "for ([(a in b)]; ;);",
+            output: "for ([a in b]; ;);",
+            errors: [
+                {
+                    messageId: "unexpected"
+                }
+            ]
+        },
+        {
+            code: "for (([a in b]); ;);",
+            output: "for ([a in b]; ;);",
+            errors: [
+                {
+                    messageId: "unexpected"
+                }
+            ]
+        },
+        {
+            code: "for (let a = [(b in c)], d = (e in f); ;);",
+            output: "for (let a = [b in c], d = (e in f); ;);",
+            errors: [
+                {
+                    messageId: "unexpected"
+                }
+            ]
+        },
+        {
+            code: "for (let [a = (b in c)] = []; ;);",
+            output: "for (let [a = b in c] = []; ;);",
+            errors: [
+                {
+                    messageId: "unexpected"
+                }
+            ]
+        },
+        {
+            code: "for (let [a = b && (c in d)] = []; ;);",
+            output: "for (let [a = b && c in d] = []; ;);",
+            errors: [
+                {
+                    messageId: "unexpected"
+                }
+            ]
+        },
+        {
+            code: "for (let a = () => { (b in c) }; ;);",
+            output: "for (let a = () => { b in c }; ;);",
+            errors: [
+                {
+                    messageId: "unexpected"
+                }
+            ]
+        },
+        {
+            code: "for (let a = () => { a && (b in c) }; ;);",
+            output: "for (let a = () => { a && b in c }; ;);",
+            errors: [
+                {
+                    messageId: "unexpected"
+                }
+            ]
+        },
+        {
+            code: "for (let a = function () { (b in c) }; ;);",
+            output: "for (let a = function () { b in c }; ;);",
+            errors: [
+                {
+                    messageId: "unexpected"
+                }
+            ]
+        },
+        {
+            code: "for (let a = { a: (b in c) }; ;);",
+            output: "for (let a = { a: b in c }; ;);",
+            errors: [
+                {
+                    messageId: "unexpected"
+                }
+            ]
+        },
+        {
+            code: "for (let a = { a: b && (c in d) }; ;);",
+            output: "for (let a = { a: b && c in d }; ;);",
+            errors: [
+                {
+                    messageId: "unexpected"
+                }
+            ]
+        },
+        {
+            code: "for (let { a = (b in c) } = {}; ;);",
+            output: "for (let { a = b in c } = {}; ;);",
+            errors: [
+                {
+                    messageId: "unexpected"
+                }
+            ]
+        },
+        {
+            code: "for (let { a = b && (c in d) } = {}; ;);",
+            output: "for (let { a = b && c in d } = {}; ;);",
+            errors: [
+                {
+                    messageId: "unexpected"
+                }
+            ]
+        },
+        {
+            code: "for (let { a: { b = c && (d in e) } } = {}; ;);",
+            output: "for (let { a: { b = c && d in e } } = {}; ;);",
+            errors: [
+                {
+                    messageId: "unexpected"
+                }
+            ]
+        },
+        {
+            code: "for (let a = `${(a in b)}`; ;);",
+            output: "for (let a = `${a in b}`; ;);",
+            errors: [
+                {
+                    messageId: "unexpected"
+                }
+            ]
+        },
+        {
+            code: "for (let a = `${a && (b in c)}`; ;);",
+            output: "for (let a = `${a && b in c}`; ;);",
+            errors: [
+                {
+                    messageId: "unexpected"
+                }
+            ]
+        },
+        {
+            code: "for (let a = (b = (c in d)) => {}; ;);",
+            output: "for (let a = (b = c in d) => {}; ;);",
+            errors: [
+                {
+                    messageId: "unexpected"
+                }
+            ]
+        },
+        {
+            code: "for (let a = (b = c && (d in e)) => {}; ;);",
+            output: "for (let a = (b = c && d in e) => {}; ;);",
+            errors: [
+                {
+                    messageId: "unexpected"
+                }
+            ]
+        },
+        {
+            code: "for (let a = (b, c = d && (e in f)) => {}; ;);",
+            output: "for (let a = (b, c = d && e in f) => {}; ;);",
+            errors: [
+                {
+                    messageId: "unexpected"
+                }
+            ]
+        },
+        {
+            code: "for (let a = function (b = c && (d in e)) {}; ;);",
+            output: "for (let a = function (b = c && d in e) {}; ;);",
+            errors: [
+                {
+                    messageId: "unexpected"
+                }
+            ]
+        },
+        {
+            code: "for (let a = function (b, c = d && (e in f)) {}; ;);",
+            output: "for (let a = function (b, c = d && e in f) {}; ;);",
+            errors: [
+                {
+                    messageId: "unexpected"
+                }
+            ]
+        },
+        {
+            code: "for (let a = b((c in d)); ;);",
+            output: "for (let a = b(c in d); ;);",
+            errors: [
+                {
+                    messageId: "unexpected"
+                }
+            ]
+        },
+        {
+            code: "for (let a = b(c, (d in e)); ;);",
+            output: "for (let a = b(c, d in e); ;);",
+            errors: [
+                {
+                    messageId: "unexpected"
+                }
+            ]
+        },
+        {
+            code: "for (let a = b(c && (d in e)); ;);",
+            output: "for (let a = b(c && d in e); ;);",
+            errors: [
+                {
+                    messageId: "unexpected"
+                }
+            ]
+        },
+        {
+            code: "for (let a = b(c, d && (e in f)); ;);",
+            output: "for (let a = b(c, d && e in f); ;);",
+            errors: [
+                {
+                    messageId: "unexpected"
+                }
+            ]
+        },
+        {
+            code: "for (let a = new b((c in d)); ;);",
+            output: "for (let a = new b(c in d); ;);",
+            errors: [
+                {
+                    messageId: "unexpected"
+                }
+            ]
+        },
+        {
+            code: "for (let a = new b(c, (d in e)); ;);",
+            output: "for (let a = new b(c, d in e); ;);",
+            errors: [
+                {
+                    messageId: "unexpected"
+                }
+            ]
+        },
+        {
+            code: "for (let a = new b(c && (d in e)); ;);",
+            output: "for (let a = new b(c && d in e); ;);",
+            errors: [
+                {
+                    messageId: "unexpected"
+                }
+            ]
+        },
+        {
+            code: "for (let a = new b(c, d && (e in f)); ;);",
+            output: "for (let a = new b(c, d && e in f); ;);",
+            errors: [
+                {
+                    messageId: "unexpected"
+                }
+            ]
+        },
+        {
+            code: "for (let a = b[(c in d)]; ;);",
+            output: "for (let a = b[c in d]; ;);",
+            errors: [
+                {
+                    messageId: "unexpected"
+                }
+            ]
+        },
+        {
+            code: "for (let a = b[c && (d in e)]; ;);",
+            output: "for (let a = b[c && d in e]; ;);",
+            errors: [
+                {
+                    messageId: "unexpected"
+                }
+            ]
+        },
+        {
+            code: "for (let a = b ? (c in d) : e; ;);",
+            output: "for (let a = b ? c in d : e; ;);",
+            errors: [
+                {
+                    messageId: "unexpected"
+                }
+            ]
+        },
+        {
+            code: "for (let a = b ? c && (d in e) : f; ;);",
+            output: "for (let a = b ? c && d in e : f; ;);",
+            errors: [
+                {
+                    messageId: "unexpected"
+                }
+            ]
+        },
+        {
+            code: "for (a ? b && (c in d) : e; ;);",
+            output: "for (a ? b && c in d : e; ;);",
+            errors: [
+                {
+                    messageId: "unexpected"
+                }
+            ]
+        },
+        {
+            code: "for (let a = ((b in c)); ;);",
+            output: "for (let a = (b in c); ;);",
+            errors: [
+                {
+                    messageId: "unexpected"
+                }
+            ]
+        },
+        {
+            code: "for (((a in b)); ;);",
+            output: "for ((a in b); ;);",
+            errors: [
+                {
+                    messageId: "unexpected"
+                }
+            ]
+        },
+        {
+            code: "for (((a && b in c && d)); ;);",
+            output: "for ((a && b in c && d); ;);",
+            errors: [
+                {
+                    messageId: "unexpected"
+                }
+            ]
+        },
+        {
+            code: "for (let a = (!(b in c)); ;);",
+            output: "for (let a = !(b in c); ;);",
+            errors: [
+                {
+                    messageId: "unexpected"
+                }
+            ]
+        },
+        {
+            code: "for (let a = (!(b && c in d)); ;);",
+            output: "for (let a = !(b && c in d); ;);",
+            errors: [
+                {
+                    messageId: "unexpected"
+                }
+            ]
+        },
+        {
+            code: "for (let a = !((b in c) && (d in e)); ;);",
+            output: "for (let a = !(b in c && d in e); ;);",
+            errors: Array(2).fill(
+                {
+                    messageId: "unexpected"
+                }
+            )
+        },
+        {
+            code: "for (let a = (x && (b in c)), d = () => { for ((e in f); ;); for ((g in h); ;); }; ;); for((i in j); ;);",
+            output: "for (let a = (x && b in c), d = () => { for ((e in f); ;); for ((g in h); ;); }; ;); for((i in j); ;);",
+            errors: [
+                {
+                    messageId: "unexpected"
+                }
+            ]
+        },
+        {
+            code: "for (let a = (b in c), d = () => { for ((x && (e in f)); ;); for ((g in h); ;); }; ;); for((i in j); ;);",
+            output: "for (let a = (b in c), d = () => { for ((x && e in f); ;); for ((g in h); ;); }; ;); for((i in j); ;);",
+            errors: [
+                {
+                    messageId: "unexpected"
+                }
+            ]
+        },
+        {
+            code: "for (let a = (b in c), d = () => { for ((e in f); ;); for ((x && (g in h)); ;); }; ;); for((i in j); ;);",
+            output: "for (let a = (b in c), d = () => { for ((e in f); ;); for ((x && g in h); ;); }; ;); for((i in j); ;);",
+            errors: [
+                {
+                    messageId: "unexpected"
+                }
+            ]
+        },
+        {
+            code: "for (let a = (b in c), d = () => { for ((e in f); ;); for ((g in h); ;); }; ;); for((x && (i in j)); ;);",
+            output: "for (let a = (b in c), d = () => { for ((e in f); ;); for ((g in h); ;); }; ;); for((x && i in j); ;);",
+            errors: [
+                {
+                    messageId: "unexpected"
+                }
+            ]
+        },
+        {
+            code: "for (let a = (x && (b in c)), d = () => { for ((e in f); ;); for ((y && (g in h)); ;); }; ;); for((i in j); ;);",
+            output: "for (let a = (x && b in c), d = () => { for ((e in f); ;); for ((y && g in h); ;); }; ;); for((i in j); ;);",
+            errors: Array(2).fill(
+                {
+                    messageId: "unexpected"
+                }
+            )
+        },
+        {
+            code: "for (let a = (x && (b in c)), d = () => { for ((y && (e in f)); ;); for ((z && (g in h)); ;); }; ;); for((w && (i in j)); ;);",
+            output: "for (let a = (x && b in c), d = () => { for ((y && e in f); ;); for ((z && g in h); ;); }; ;); for((w && i in j); ;);",
+            errors: Array(4).fill(
+                {
+                    messageId: "unexpected"
+                }
+            )
+        },
+
+        // https://github.com/eslint/eslint/issues/11706 regression tests (also in valid[])
+        {
+            code: "for (let a = (b); a > (b); a = (b)) a = (b); a = (b);",
+            output: "for (let a = b; a > b; a = b) a = b; a = b;",
+            errors: Array(5).fill(
+                {
+                    messageId: "unexpected"
+                }
+            )
+        },
+        {
+            code: "for ((a = b); (a > b); (a = b)) (a = b); (a = b);",
+            output: "for (a = b; a > b; a = b) a = b; a = b;",
+            errors: Array(5).fill(
+                {
+                    messageId: "unexpected"
+                }
+            )
+        },
+        {
+            code: "for (let a = b; a > (b); a = (b)) a = (b); a = (b);",
+            output: "for (let a = b; a > b; a = b) a = b; a = b;",
+            errors: Array(4).fill(
+                {
+                    messageId: "unexpected"
+                }
+            )
+        },
+        {
+            code: "for (let a = b; (a > b); (a = b)) (a = b); (a = b);",
+            output: "for (let a = b; a > b; a = b) a = b; a = b;",
+            errors: Array(4).fill(
+                {
+                    messageId: "unexpected"
+                }
+            )
+        },
+        {
+            code: "for (; a > (b); a = (b)) a = (b); a = (b);",
+            output: "for (; a > b; a = b) a = b; a = b;",
+            errors: Array(4).fill(
+                {
+                    messageId: "unexpected"
+                }
+            )
+        },
+        {
+            code: "for (; (a > b); (a = b)) (a = b); (a = b);",
+            output: "for (; a > b; a = b) a = b; a = b;",
+            errors: Array(4).fill(
+                {
+                    messageId: "unexpected"
+                }
+            )
+        },
+        {
+            code: "for (let a = (b); a = (b in c); a = (b in c)) a = (b in c); a = (b in c);",
+            output: "for (let a = b; a = b in c; a = b in c) a = b in c; a = b in c;",
+            errors: Array(5).fill(
+                {
+                    messageId: "unexpected"
+                }
+            )
+        },
+        {
+            code: "for (let a = (b); (a in b); (a in b)) (a in b); (a in b);",
+            output: "for (let a = b; a in b; a in b) a in b; a in b;",
+            errors: Array(5).fill(
+                {
+                    messageId: "unexpected"
+                }
+            )
+        },
+        {
+            code: "for (let a = b; a = (b in c); a = (b in c)) a = (b in c); a = (b in c);",
+            output: "for (let a = b; a = b in c; a = b in c) a = b in c; a = b in c;",
+            errors: Array(4).fill(
+                {
+                    messageId: "unexpected"
+                }
+            )
+        },
+        {
+            code: "for (let a = b; (a in b); (a in b)) (a in b); (a in b);",
+            output: "for (let a = b; a in b; a in b) a in b; a in b;",
+            errors: Array(4).fill(
+                {
+                    messageId: "unexpected"
+                }
+            )
+        },
+        {
+            code: "for (; a = (b in c); a = (b in c)) a = (b in c); a = (b in c);",
+            output: "for (; a = b in c; a = b in c) a = b in c; a = b in c;",
+            errors: Array(4).fill(
+                {
+                    messageId: "unexpected"
+                }
+            )
+        },
+        {
+            code: "for (; (a in b); (a in b)) (a in b); (a in b);",
+            output: "for (; a in b; a in b) a in b; a in b;",
+            errors: Array(4).fill(
+                {
+                    messageId: "unexpected"
+                }
+            )
+        },
+        {
+            code: "for (let a = (b + c), d = () => { for ((e + f); ;); for ((g + h); ;); }; ;); for((i + j); ;);",
+            output: "for (let a = b + c, d = () => { for (e + f; ;); for (g + h; ;); }; ;); for(i + j; ;);",
+            errors: Array(4).fill(
+                {
+                    messageId: "unexpected"
+                }
+            )
+        },
+
+        // import expressions
+        invalid(
+            "import((source))",
+            "import(source)",
+            "Identifier",
+            1,
+            { parserOptions: { ecmaVersion: 2020 } }
+        ),
+        invalid(
+            "import((source = 'foo.js'))",
+            "import(source = 'foo.js')",
+            "AssignmentExpression",
+            1,
+            { parserOptions: { ecmaVersion: 2020 } }
+        ),
+        invalid(
+            "import(((s,t)))",
+            "import((s,t))",
+            "SequenceExpression",
+            1,
+            { parserOptions: { ecmaVersion: 2020 } }
         )
     ]
 });

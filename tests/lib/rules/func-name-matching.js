@@ -10,7 +10,7 @@
 //------------------------------------------------------------------------------
 
 const rule = require("../../../lib/rules/func-name-matching"),
-    RuleTester = require("../../../lib/testers/rule-tester");
+    { RuleTester } = require("../../../lib/rule-tester");
 
 //------------------------------------------------------------------------------
 // Tests
@@ -255,6 +255,10 @@ ruleTester.run("func-name-matching", rule, {
             code: "Reflect.defineProperty(foo, 'bar', { value() {} })",
             options: ["never", { considerPropertyDescriptor: true }],
             parserOptions: { ecmaVersion: 6 }
+        },
+        {
+            code: "foo({ value: function value() {} })",
+            options: ["always", { considerPropertyDescriptor: true }]
         }
     ],
     invalid: [
@@ -445,6 +449,13 @@ ruleTester.run("func-name-matching", rule, {
             options: ["never", { considerPropertyDescriptor: true }],
             errors: [
                 { messageId: "notMatchProperty", data: { funcName: "bar", name: "bar" } }
+            ]
+        },
+        {
+            code: "foo({ value: function bar() {} })",
+            options: ["always", { considerPropertyDescriptor: true }],
+            errors: [
+                { messageId: "matchProperty", data: { funcName: "bar", name: "value" } }
             ]
         }
     ]

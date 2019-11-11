@@ -3,8 +3,8 @@
 module.exports = {
     mode: "none",
     entry: {
-        eslint: ["@babel/polyfill", "./lib/linter.js"],
-        espree: ["@babel/polyfill", "espree"]
+        eslint: ["core-js/stable", "regenerator-runtime/runtime", "./lib/linter/linter.js"],
+        espree: ["core-js/stable", "regenerator-runtime/runtime", "espree"]
     },
     output: {
         filename: "[name].js",
@@ -15,12 +15,12 @@ module.exports = {
     module: {
         rules: [
             {
-                test: /\.js$/u,
+                test: /\.m?js$/u,
                 loader: "babel-loader",
                 options: {
                     presets: ["@babel/preset-env"]
                 },
-                exclude: /node_modules/u
+                exclude: /node_modules\/lodash/u
             }
         ]
     },

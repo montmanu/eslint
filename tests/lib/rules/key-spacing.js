@@ -10,7 +10,7 @@
 //------------------------------------------------------------------------------
 
 const rule = require("../../../lib/rules/key-spacing"),
-    RuleTester = require("../../../lib/testers/rule-tester");
+    { RuleTester } = require("../../../lib/rule-tester");
 
 const ruleTester = new RuleTester();
 
@@ -209,7 +209,7 @@ ruleTester.run("key-spacing", rule, {
             "};"
         ].join("\n"),
         options: [{ align: "value" }],
-        parserOptions: { sourceType: "module" }
+        parserOptions: { ecmaVersion: 6, sourceType: "module" }
     }, {
         code: [
             "var test = {",

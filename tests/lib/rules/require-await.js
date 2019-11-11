@@ -10,7 +10,7 @@
 //------------------------------------------------------------------------------
 
 const rule = require("../../../lib/rules/require-await"),
-    RuleTester = require("../../../lib/testers/rule-tester");
+    { RuleTester } = require("../../../lib/rule-tester");
 
 //------------------------------------------------------------------------------
 // Tests
@@ -71,6 +71,10 @@ ruleTester.run("require-await", rule, {
         {
             code: "(class { async foo() { doSomething() } })",
             errors: ["Async method 'foo' has no 'await' expression."]
+        },
+        {
+            code: "(class { async ''() { doSomething() } })",
+            errors: ["Async method '' has no 'await' expression."]
         },
         {
             code: "async function foo() { async () => { await doSomething() } }",

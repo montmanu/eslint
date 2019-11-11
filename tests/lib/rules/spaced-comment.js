@@ -5,7 +5,7 @@
 "use strict";
 
 const rule = require("../../../lib/rules/spaced-comment"),
-    RuleTester = require("../../../lib/testers/rule-tester");
+    { RuleTester } = require("../../../lib/rule-tester");
 
 const ruleTester = new RuleTester(),
     validShebangProgram = "#!/path/to/node\nvar a = 3;",
@@ -313,7 +313,7 @@ ruleTester.run("spaced-comment", rule, {
             output: "// An invalid comment NOT starting with space\nvar a = 1;",
             options: ["always"],
             errors: [{
-                messsage: "Expected space or tab after '//' in comment.",
+                message: "Expected space or tab after '//' in comment.",
                 type: "Line"
             }]
         },

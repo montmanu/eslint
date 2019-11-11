@@ -10,7 +10,7 @@
 //------------------------------------------------------------------------------
 
 const rule = require("../../../lib/rules/no-undef-init"),
-    RuleTester = require("../../../lib/testers/rule-tester");
+    { RuleTester } = require("../../../lib/rule-tester");
 
 //------------------------------------------------------------------------------
 // Tests
@@ -90,6 +90,62 @@ ruleTester.run("no-undef-init", rule, {
         {
             code: "for(var i in [1,2,3]){let a = undefined; for(var j in [1,2,3]){}}",
             output: "for(var i in [1,2,3]){let a; for(var j in [1,2,3]){}}",
+            parserOptions: { ecmaVersion: 6 },
+            errors: [{ message: "It's not necessary to initialize 'a' to undefined.", type: "VariableDeclarator" }]
+        },
+
+        // Should not autofix if it would remove comments
+        {
+            code: "let /* comment */a = undefined;",
+            output: "let /* comment */a;",
+            parserOptions: { ecmaVersion: 6 },
+            errors: [{ message: "It's not necessary to initialize 'a' to undefined.", type: "VariableDeclarator" }]
+        },
+        {
+            code: "let a/**/ = undefined;",
+            output: null,
+            parserOptions: { ecmaVersion: 6 },
+            errors: [{ message: "It's not necessary to initialize 'a' to undefined.", type: "VariableDeclarator" }]
+        },
+        {
+            code: "let a /**/ = undefined;",
+            output: null,
+            parserOptions: { ecmaVersion: 6 },
+            errors: [{ message: "It's not necessary to initialize 'a' to undefined.", type: "VariableDeclarator" }]
+        },
+        {
+            code: "let a//\n= undefined;",
+            output: null,
+            parserOptions: { ecmaVersion: 6 },
+            errors: [{ message: "It's not necessary to initialize 'a' to undefined.", type: "VariableDeclarator" }]
+        },
+        {
+            code: "let a = /**/undefined;",
+            output: null,
+            parserOptions: { ecmaVersion: 6 },
+            errors: [{ message: "It's not necessary to initialize 'a' to undefined.", type: "VariableDeclarator" }]
+        },
+        {
+            code: "let a = //\nundefined;",
+            output: null,
+            parserOptions: { ecmaVersion: 6 },
+            errors: [{ message: "It's not necessary to initialize 'a' to undefined.", type: "VariableDeclarator" }]
+        },
+        {
+            code: "let a = undefined/* comment */;",
+            output: "let a/* comment */;",
+            parserOptions: { ecmaVersion: 6 },
+            errors: [{ message: "It's not necessary to initialize 'a' to undefined.", type: "VariableDeclarator" }]
+        },
+        {
+            code: "let a = undefined/* comment */, b;",
+            output: "let a/* comment */, b;",
+            parserOptions: { ecmaVersion: 6 },
+            errors: [{ message: "It's not necessary to initialize 'a' to undefined.", type: "VariableDeclarator" }]
+        },
+        {
+            code: "let a = undefined//comment\n, b;",
+            output: "let a//comment\n, b;",
             parserOptions: { ecmaVersion: 6 },
             errors: [{ message: "It's not necessary to initialize 'a' to undefined.", type: "VariableDeclarator" }]
         }

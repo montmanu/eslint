@@ -1,6 +1,6 @@
 /**
  * @fileoverview Script to update the README with team and sponsors.
- * Note that this requires eslint.github.io to be available in the same
+ * Note that this requires eslint/website to be available in the same
  * directory as the eslint repo.
  *
  *   node tools/update-readme.js
@@ -16,13 +16,14 @@
 const path = require("path");
 const fs = require("fs");
 const { stripIndents } = require("common-tags");
+const ejs = require("ejs");
 
 //-----------------------------------------------------------------------------
 // Data
 //-----------------------------------------------------------------------------
 
 const README_FILE_PATH = path.resolve(__dirname, "../README.md");
-const WEBSITE_DATA_PATH = path.resolve(__dirname, "../../eslint.github.io/_data");
+const WEBSITE_DATA_PATH = path.resolve(__dirname, "../../website/_data");
 
 const team = JSON.parse(fs.readFileSync(path.join(WEBSITE_DATA_PATH, "team.json")));
 const allSponsors = JSON.parse(fs.readFileSync(path.join(WEBSITE_DATA_PATH, "sponsors.json")));
@@ -37,7 +38,6 @@ const heights = {
 // remove backers from sponsors list - not shown on readme
 delete allSponsors.backers;
 
-
 //-----------------------------------------------------------------------------
 // Helpers
 //-----------------------------------------------------------------------------
@@ -45,12 +45,11 @@ delete allSponsors.backers;
 /**
  * Formats an array of team members for inclusion in the readme.
  * @param {Array} members The array of members to format.
- * @param {string} label The label for the section of the readme.
  * @returns {string} The HTML for the members list.
  */
-function formatTeamMembers(members, label) {
+function formatTeamMembers(members) {
     /* eslint-disable indent*/
-    return stripIndents`<!--${label}start-->
+    return stripIndents`
         <table><tbody><tr>${
         members.map((member, index) => `<td align="center" valign="top" width="11%">
             <a href="https://github.com/${member.username}">
@@ -58,7 +57,7 @@ function formatTeamMembers(members, label) {
                 ${member.name}
             </a>
             </td>${(index + 1) % 9 === 0 ? "</tr><tr>" : ""}`).join("")
-        }</tr></tbody></table><!--${label}end-->`;
+        }</tr></tbody></table>`;
     /* eslint-enable indent*/
 }
 
@@ -86,10 +85,42 @@ function formatSponsors(sponsors) {
 // Main
 //-----------------------------------------------------------------------------
 
-// replace all of the section
-let newReadme = readme.replace(/<!--tscstart-->[\w\W]*?<!--tscend-->/u, formatTeamMembers(team.tsc, "tsc"));
+const HTML_TEMPLATE = stripIndents`
 
-newReadme = newReadme.replace(/<!--committersstart-->[\w\W]*?<!--committersend-->/u, formatTeamMembers(team.committers, "committers"));
+    <!--teamstart-->
+
+    ### Technical Steering Committee (TSC)
+
+    The people who manage releases, review feature requests, and meet regularly to ensure ESLint is properly maintained.
+
+    <%- formatTeamMembers(team.tsc) %>
+
+    <% if (team.reviewers.length > 0) { %>
+    ### Reviewers
+
+    The people who review and implement new features.
+
+    <%- formatTeamMembers(team.reviewers) %>
+
+    <% } %>
+
+    <% if (team.committers.length > 0) { %>
+    ### Committers
+
+    The people who review and fix bugs and help triage issues.
+
+    <%- formatTeamMembers(team.committers) %>
+
+    <% } %>
+    <!--teamend-->
+`;
+
+// replace all of the section
+let newReadme = readme.replace(/<!--teamstart-->[\w\W]*?<!--teamend-->/u, ejs.render(HTML_TEMPLATE, {
+    team,
+    formatTeamMembers
+}));
+
 newReadme = newReadme.replace(/<!--sponsorsstart-->[\w\W]*?<!--sponsorsend-->/u, formatSponsors(allSponsors));
 
 // output to the file

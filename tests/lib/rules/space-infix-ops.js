@@ -10,7 +10,7 @@
 //------------------------------------------------------------------------------
 
 const rule = require("../../../lib/rules/space-infix-ops"),
-    RuleTester = require("../../../lib/testers/rule-tester"),
+    { RuleTester } = require("../../../lib/rule-tester"),
     parser = require("../../fixtures/fixture-parser");
 
 const ruleTester = new RuleTester();
@@ -41,13 +41,13 @@ ruleTester.run("space-infix-ops", rule, {
         { code: "a |0", options: [{ int32Hint: true }] },
 
         // Type Annotations
-        { code: "function foo(a: number = 0) { }", parserOptions: { ecmaVersion: 6 }, parser: parser("type-annotations/function-parameter-type-annotation") },
-        { code: "function foo(): Bar { }", parserOptions: { ecmaVersion: 6 }, parser: parser("type-annotations/function-return-type-annotation") },
-        { code: "var foo: Bar = '';", parserOptions: { ecmaVersion: 6 }, parser: parser("type-annotations/variable-declaration-init-type-annotation") },
-        { code: "const foo = function(a: number = 0): Bar { };", parserOptions: { ecmaVersion: 6 }, parser: parser("type-annotations/function-expression-type-annotation") },
+        { code: "function foo(a: number = 0) { }", parser: parser("type-annotations/function-parameter-type-annotation"), parserOptions: { ecmaVersion: 6 } },
+        { code: "function foo(): Bar { }", parser: parser("type-annotations/function-return-type-annotation"), parserOptions: { ecmaVersion: 6 } },
+        { code: "var foo: Bar = '';", parser: parser("type-annotations/variable-declaration-init-type-annotation"), parserOptions: { ecmaVersion: 6 } },
+        { code: "const foo = function(a: number = 0): Bar { };", parser: parser("type-annotations/function-expression-type-annotation"), parserOptions: { ecmaVersion: 6 } },
 
         // TypeScript Type Aliases
-        { code: "type Foo<T> = T;", parserOptions: { ecmaVersion: 6 }, parser: parser("typescript-parsers/type-alias") }
+        { code: "type Foo<T> = T;", parser: parser("typescript-parsers/type-alias"), parserOptions: { ecmaVersion: 6 } }
     ],
     invalid: [
         {
@@ -57,7 +57,8 @@ ruleTester.run("space-infix-ops", rule, {
                 message: "Operator '+' must be spaced.",
                 type: "BinaryExpression",
                 line: 1,
-                column: 2
+                column: 2,
+                endColumn: 3
             }]
         },
         {
@@ -67,7 +68,8 @@ ruleTester.run("space-infix-ops", rule, {
                 message: "Operator '+' must be spaced.",
                 type: "BinaryExpression",
                 line: 1,
-                column: 3
+                column: 3,
+                endColumn: 4
             }]
         },
         {
@@ -77,7 +79,8 @@ ruleTester.run("space-infix-ops", rule, {
                 message: "Operator '+' must be spaced.",
                 type: "BinaryExpression",
                 line: 1,
-                column: 2
+                column: 2,
+                endColumn: 3
             }]
         },
         {
@@ -87,7 +90,8 @@ ruleTester.run("space-infix-ops", rule, {
                 message: "Operator '||' must be spaced.",
                 type: "LogicalExpression",
                 line: 1,
-                column: 2
+                column: 2,
+                endColumn: 4
             }]
         },
         {
@@ -97,7 +101,8 @@ ruleTester.run("space-infix-ops", rule, {
                 message: "Operator '||' must be spaced.",
                 type: "LogicalExpression",
                 line: 1,
-                column: 3
+                column: 3,
+                endColumn: 5
             }]
         },
         {
@@ -107,7 +112,8 @@ ruleTester.run("space-infix-ops", rule, {
                 message: "Operator '||' must be spaced.",
                 type: "LogicalExpression",
                 line: 1,
-                column: 2
+                column: 2,
+                endColumn: 4
             }]
         },
         {
@@ -147,7 +153,8 @@ ruleTester.run("space-infix-ops", rule, {
                 message: "Operator '?' must be spaced.",
                 type: "ConditionalExpression",
                 line: 1,
-                column: 2
+                column: 2,
+                endColumn: 3
             }]
         },
         {
@@ -157,7 +164,8 @@ ruleTester.run("space-infix-ops", rule, {
                 message: "Operator '?' must be spaced.",
                 type: "ConditionalExpression",
                 line: 1,
-                column: 2
+                column: 2,
+                endColumn: 3
             }]
         },
         {
@@ -167,7 +175,8 @@ ruleTester.run("space-infix-ops", rule, {
                 message: "Operator ':' must be spaced.",
                 type: "ConditionalExpression",
                 line: 1,
-                column: 6
+                column: 6,
+                endColumn: 7
             }]
         },
         {
@@ -177,7 +186,8 @@ ruleTester.run("space-infix-ops", rule, {
                 message: "Operator '?' must be spaced.",
                 type: "ConditionalExpression",
                 line: 1,
-                column: 2
+                column: 2,
+                endColumn: 3
             }]
         },
         {
@@ -187,7 +197,8 @@ ruleTester.run("space-infix-ops", rule, {
                 message: "Operator '?' must be spaced.",
                 type: "ConditionalExpression",
                 line: 1,
-                column: 3
+                column: 3,
+                endColumn: 4
             }]
         },
         {
@@ -197,7 +208,8 @@ ruleTester.run("space-infix-ops", rule, {
                 message: "Operator ':' must be spaced.",
                 type: "ConditionalExpression",
                 line: 1,
-                column: 6
+                column: 6,
+                endColumn: 7
             }]
         },
         {
@@ -207,7 +219,8 @@ ruleTester.run("space-infix-ops", rule, {
                 message: "Operator ':' must be spaced.",
                 type: "ConditionalExpression",
                 line: 1,
-                column: 7
+                column: 7,
+                endColumn: 8
             }]
         },
         {
@@ -312,12 +325,12 @@ ruleTester.run("space-infix-ops", rule, {
                 message: "Operator '=' must be spaced.",
                 line: 1,
                 column: 7,
-                nodeType: "AssignmentPattern"
+                type: "AssignmentPattern"
             }, {
                 message: "Operator '=' must be spaced.",
                 line: 1,
                 column: 10,
-                nodeType: "VariableDeclarator"
+                type: "VariableDeclarator"
             }]
         },
         {
@@ -328,7 +341,7 @@ ruleTester.run("space-infix-ops", rule, {
                 message: "Operator '=' must be spaced.",
                 line: 1,
                 column: 15,
-                nodeType: "AssignmentPattern"
+                type: "AssignmentPattern"
             }]
         },
         {
@@ -339,7 +352,7 @@ ruleTester.run("space-infix-ops", rule, {
                 message: "Operator '**' must be spaced.",
                 line: 1,
                 column: 2,
-                nodeType: "BinaryExpression"
+                type: "BinaryExpression"
             }]
         },
         {
@@ -349,7 +362,7 @@ ruleTester.run("space-infix-ops", rule, {
                 message: "Operator 'in' must be spaced.",
                 line: 1,
                 column: 6,
-                nodeType: "BinaryExpression"
+                type: "BinaryExpression"
             }]
         },
         {
@@ -359,7 +372,7 @@ ruleTester.run("space-infix-ops", rule, {
                 message: "Operator 'instanceof' must be spaced.",
                 line: 1,
                 column: 6,
-                nodeType: "BinaryExpression"
+                type: "BinaryExpression"
             }]
         },
 
@@ -368,25 +381,25 @@ ruleTester.run("space-infix-ops", rule, {
         {
             code: "var a: Foo= b;",
             output: "var a: Foo = b;",
+            parser: parser("type-annotations/variable-declaration-init-type-annotation-no-space"),
             errors: [{
                 message: "Operator '=' must be spaced.",
                 type: "VariableDeclarator",
                 line: 1,
                 column: 11
-            }],
-            parser: parser("type-annotations/variable-declaration-init-type-annotation-no-space")
+            }]
         },
         {
             code: "function foo(a: number=0): Foo { }",
             output: "function foo(a: number = 0): Foo { }",
+            parser: parser("type-annotations/function-declaration-type-annotation-no-space"),
             parserOptions: { ecmaVersion: 6 },
             errors: [{
                 message: "Operator '=' must be spaced.",
                 line: 1,
                 column: 23,
-                nodeType: "AssignmentPattern"
-            }],
-            parser: parser("type-annotations/function-declaration-type-annotation-no-space")
+                type: "AssignmentPattern"
+            }]
         }
     ]
 });

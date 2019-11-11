@@ -9,7 +9,7 @@
 //------------------------------------------------------------------------------
 
 const rule = require("../../../lib/rules/arrow-body-style"),
-    RuleTester = require("../../../lib/testers/rule-tester");
+    { RuleTester } = require("../../../lib/rule-tester");
 
 //------------------------------------------------------------------------------
 // Tests
@@ -153,6 +153,18 @@ ruleTester.run("arrow-body-style", rule, {
             code: "var foo = () => { return ({ bar: 0 }); };",
             output: "var foo = () => ({ bar: 0 });",
             options: ["as-needed"],
+            errors: [
+                {
+                    line: 1,
+                    column: 17,
+                    type: "ArrowFunctionExpression",
+                    messageId: "unexpectedSingleBlock"
+                }
+            ]
+        },
+        {
+            code: "var foo = () => { return a, b }",
+            output: "var foo = () => (a, b)",
             errors: [
                 {
                     line: 1,

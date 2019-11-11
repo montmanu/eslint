@@ -10,7 +10,7 @@
 //------------------------------------------------------------------------------
 
 const rule = require("../../../lib/rules/require-unicode-regexp");
-const RuleTester = require("../../../lib/testers/rule-tester");
+const { RuleTester } = require("../../../lib/rule-tester");
 
 //------------------------------------------------------------------------------
 // Tests
@@ -30,7 +30,7 @@ ruleTester.run("require-unicode-regexp", rule, {
         "new RegExp('', 'gimuy')",
         "const flags = 'u'; new RegExp('', flags)",
         "const flags = 'g'; new RegExp('', flags + 'u')",
-        "const flags = 'gimu'; new RegExp('foo', flags.slice(1))",
+        "const flags = 'gimu'; new RegExp('foo', flags[3])",
         "new RegExp('', flags)",
         "function f(flags) { return new RegExp('', flags) }",
         "function f(RegExp) { return new RegExp('foo') }"
@@ -73,18 +73,18 @@ ruleTester.run("require-unicode-regexp", rule, {
             errors: [{ messageId: "requireUFlag" }]
         },
         {
-            code: "const flags = 'gimu'; new RegExp('foo', flags.slice(0, -1))",
+            code: "const flags = 'gimu'; new RegExp('foo', flags[0])",
             errors: [{ messageId: "requireUFlag" }]
         },
         {
             code: "new window.RegExp('foo')",
-            errors: [{ messageId: "requireUFlag" }],
-            env: { browser: true }
+            env: { browser: true },
+            errors: [{ messageId: "requireUFlag" }]
         },
         {
             code: "new global.RegExp('foo')",
-            errors: [{ messageId: "requireUFlag" }],
-            env: { node: true }
+            env: { node: true },
+            errors: [{ messageId: "requireUFlag" }]
         }
     ]
 });
